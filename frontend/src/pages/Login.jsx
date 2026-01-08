@@ -2,32 +2,25 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, register } from "../api/auth";
 
-// Basic email check
-function isValidEmail(email) {
-  return typeof email === "string" && email.includes("@");
-}
-
 export default function Login() {
   const nav = useNavigate();
 
-  const [mode, setMode] = useState("login"); // "login" or "register"
+  const [mode, setMode] = useState("login");
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e) {
+  async function submit(e) {
     e.preventDefault();
     setError("");
 
-    // Frontend validation
-    if (mode === "register" && companyName.trim() === "") {
+    if (mode === "register" && !companyName.trim()) {
       setError("Company name is required");
       return;
     }
-    if (!isValidEmail(email)) {
+    if (!email.includes("@")) {
       setError("Enter a valid email");
       return;
     }
@@ -43,71 +36,68 @@ export default function Login() {
         await register(companyName.trim(), email.trim(), password);
       }
 
-      const data = await login(email.trim(), password);
-      localStorage.setItem("token", data.token);
-
+      const res = await login(email.trim(), password);
+      localStorage.setItem("token", res.token);
       nav("/");
-    } catch (err) {
-      // Backend will send {error: "..."}
-      const msg = err?.response?.data?.error || "Something went wrong";
-      setError(msg);
+    } catch (e) {
+      setError(e?.response?.data?.error || "Login failed");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "40px auto", fontFamily: "Arial" }}>
-      <h2>{mode === "login" ? "Login" : "Register"}</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white shadow rounded-lg w-full max-w-md p-6">
+        <h2 className="text-2xl font-semibold mb-4">
+          {mode === "login" ? "Login" : "Register"}
+        </h2>
 
-      <form onSubmit={onSubmit}>
-        {mode === "register" && (
-          <div style={{ marginBottom: 12 }}>
-            <label>Company Name</label>
+        <form onSubmit={submit} className="space-y-4">
+          {mode === "register" && (
             <input
-              style={{ width: "100%", padding: 8 }}
+              className="w-full border rounded px-3 py-2"
+              placeholder="Company Name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
             />
-          </div>
-        )}
+          )}
 
-        <div style={{ marginBottom: 12 }}>
-          <label>Email</label>
           <input
-            style={{ width: "100%", padding: 8 }}
+            className="w-full border rounded px-3 py-2"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-        </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label>Password</label>
           <input
             type="password"
-            style={{ width: "100%", padding: 8 }}
+            className="w-full border rounded px-3 py-2"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-        </div>
 
-        {error && <div style={{ color: "red", marginBottom: 12 }}>{error}</div>}
+          {error && (
+            <div className="text-red-600 text-sm">
+              {error}
+            </div>
+          )}
 
-        <button disabled={loading} style={{ padding: 10, width: "100%" }}>
-          {loading ? "Please wait..." : mode === "login" ? "Login" : "Register + Login"}
+          <button
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          >
+            {loading ? "Please wait..." : mode === "login" ? "Login" : "Register"}
+          </button>
+        </form>
+
+        <button
+          onClick={() => setMode(mode === "login" ? "register" : "login")}
+          className="mt-4 text-blue-600 text-sm"
+        >
+          {mode === "login" ? "Create an account" : "Back to login"}
         </button>
-      </form>
-
-      <div style={{ marginTop: 12 }}>
-        {mode === "login" ? (
-          <button onClick={() => setMode("register")} style={{ padding: 8, width: "100%" }}>
-            Switch to Register
-          </button>
-        ) : (
-          <button onClick={() => setMode("login")} style={{ padding: 8, width: "100%" }}>
-            Switch to Login
-          </button>
-        )}
       </div>
     </div>
   );
